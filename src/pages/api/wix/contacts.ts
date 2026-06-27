@@ -1,27 +1,85 @@
-import { contacts } from "@wix/crm";
+import type { APIRoute } from "astro";
+import { submittedContact } from "@wix/crm";
 
-export async function GET() {
+export const POST: APIRoute = async ({ request }) => {
   try {
-    const result = await contacts.queryContacts().find();
+    const body = await request.json();
 
-    return new Response(JSON.stringify(result, null, 2), {
-      headers: {
-        "Content-Type": "application/json",
+    console.log("WIX CONTACT REQUEST");
+    console.log(JSON.stringify(body, null, 2));
+
+    const result = await submittedContact.appendOrCreateContact({
+      info: {
+        name: {
+          first: body.firstName || "",
+          last: body.lastName || "",
+        },
+
+        emails: {
+          items: body.email
+            ? [
+                {
+                  email: body.email,
+                },
+              ]
+            : [],
+        },
+
+        phones: {
+          items: body.phone
+            ? [
+                {
+                  phone: body.phone,
+                },
+              ]
+            : [],
+        },
       },
     });
-  } catch (error: any) {
+
+    console.log("WIX CONTACT CREATED");
+    console.log(JSON.stringify(result, null, 2));
+
     return new Response(
-      JSON.stringify(
-        {
-          message: error?.message,
-          error,
+      JSON.stringify({
+        success: true,
+        result,
+      }),
+      {
+        headers: {
+          "Content-Type": "application/json",
         },
-        null,
-        2,
-      ),
+      },
+    );
+  } catch (error: any) {
+    console.error("WIX CONTACT ERROR");
+    console.error(error);
+
+    return new Response(
+      JSON.stringify({
+        success: false,
+        message: error?.message,
+      }),
       {
         status: 500,
+        headers: {
+          "Content-Type": "application/json",
+        },
       },
     );
   }
-}
+};
+
+export const GET: APIRoute = async () => {
+  return new Response(
+    JSON.stringify({
+      success: true,
+      route: "working",
+    }),
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    },
+  );
+};
